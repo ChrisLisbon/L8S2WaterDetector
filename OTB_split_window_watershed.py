@@ -8,14 +8,15 @@ Created on Wed Jun  3 23:05:43 2020
 
 import otbApplication
 from osgeo import gdal, ogr
-from osgeo.gdalconst import *
+#from osgeo.gdalconst import *
 import numpy as np
 import dask_ml.cluster
 import dask.array as da
 import os
 import re
+import sys
 
-def get_clusters_array(arrays_list, clusters_number=3):  
+def get_clusters_array(arrays_list, clasters_number=3):  
     arrays_number=len(arrays_list)
     shape=arrays_list[0].shape
     print(shape)
@@ -28,35 +29,35 @@ def get_clusters_array(arrays_list, clusters_number=3):
         arrays_list[i]=np.nan_to_num(arrays_list[i], nan=-9999)
         arrays_matrix=np.append(arrays_matrix, [np.ravel(arrays_list[i])], axis=0)        
     matrix_for_kmeans=np.transpose(arrays_matrix) 
-    print('Starting clustering')
+    print('Starting clastering')
     x=da.from_array(matrix_for_kmeans, chunks= (5000, arrays_number))
     x = x.persist()    
-    km = dask_ml.cluster.KMeans(n_clusters = clusters_number, init_max_iter = 2, oversampling_factor = 10) 
+    km = dask_ml.cluster.KMeans(n_clusters = clasters_number, init_max_iter = 2, oversampling_factor = 10) 
     km.fit(x)
     print('finished')
     return(np.reshape(np.array(km.labels_), shape))
 
 
 
+
+input_file='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/raw_B5.TIF'
 temp_folder='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/'
-input_file='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/B5_.tif'
 output_file='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/full_shape.tif'
 
 window_size=300
-images_list=['/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/B5_.tif',
-             '/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/B4_.tif']
+images_list=['/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/raw_B5.TIF',
+             '/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/raw_B4.TIF',
+             '/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/raw_B3.TIF']
+
+
+
 
 
 ds=gdal.Open(input_file)
 geo_transform=ds.GetGeoTransform()
-print(geo_transform)
 prj=ds.GetProjection()
-#print(prj)
 ds_array=np.array(ds.GetRasterBand(1).ReadAsArray())
 ds_shape=ds_array.shape
-print(ds_shape)
-#x_max=geo_transform[0]+ds_shape[1]*geo_transform[1]
-#y_max=geo_transform[3]+ds_shape[0]*geo_transform[5]
 x_min=geo_transform[0]
 y_min=geo_transform[3]
 
@@ -169,7 +170,7 @@ for i in range(range_x+1):
     
 os.remove(temp_folder+'temp.tif')
 
-outShapefile = temp_folder+'temp_full.shp'
+outShapefile = temp_folder+'vector_segments.shp'
 outDriver = ogr.GetDriverByName("ESRI Shapefile")
 outDataSource = outDriver.CreateDataSource(outShapefile)
 outLayer = outDataSource.CreateLayer("layer", outReference, geom_type=ogr.wkbPolygon)
@@ -182,7 +183,7 @@ for image in images_list:
 outLayer=None
 outDataSource=None
 
-new_obj=ogr.Open(temp_folder+'temp_full.shp', 1)
+new_obj=ogr.Open(temp_folder+'vector_segments.shp', 1)
 newLayer=new_obj.GetLayerByIndex(0)
 newLayerDef = newLayer.GetLayerDefn()
 
@@ -212,13 +213,13 @@ new_obj=None
 feature=None
 layer=None
 #for file in sapefiles_list:
-    #if file!="temp_full.shp" and file!="temp_full.shx" and file!="temp_full.dbf" and file!="temp_full.prj":
+    #if file!="vector_segments.shp" and file!="vector_segments.shx" and file!="vector_segments.dbf" and file!="vector_segments.prj":
         #os.remove(temp_folder+file)
 
 arrays_list=[]
 for image in images_list:
     arrays_list.append(list())
-vector_obj = ogr.Open(temp_folder+'temp_full.shp')
+vector_obj = ogr.Open(temp_folder+'vector_segments.shp')
 layer = vector_obj.GetLayerByIndex(0)
     
 for feature in layer:
@@ -235,7 +236,7 @@ for i in range (len(arrays_list)):
     
 clasters_array=get_clusters_array(new_list, clusters_number=5)
 
-vector_obj = ogr.Open(temp_folder+'temp_full.shp', 1)
+vector_obj = ogr.Open(temp_folder+'vector_segments.shp', 1)
 layer = vector_obj.GetLayerByIndex(0)   
 layer.CreateField(ogr.FieldDefn("class", ogr.OFTInteger))
 i=0
