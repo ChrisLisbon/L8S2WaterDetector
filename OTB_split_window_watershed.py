@@ -34,7 +34,7 @@ def get_clusters_array(arrays_list, clasters_number=3):
     x = x.persist()    
     km = dask_ml.cluster.KMeans(n_clusters = clasters_number, init_max_iter = 2, oversampling_factor = 10) 
     km.fit(x)
-    print('finished')
+    print('Clasterization finished')
     return(np.reshape(np.array(km.labels_), shape))
 
 

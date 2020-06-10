@@ -9,13 +9,11 @@ Created on Tue Jun  9 14:56:30 2020
 
 import otbApplication
 from osgeo import gdal, ogr
-#from osgeo.gdalconst import *
 import numpy as np
-import dask_ml.cluster
-import dask.array as da
 import os
 import re
 import shutil
+from primary_functions import k_means_clastering
 
 class WatershesBasedClassifier:
     def __init__(self, input_images_collection, base_image_index=0, temp_folder=None, clasters_number=5):
@@ -53,9 +51,6 @@ class WatershesBasedClassifier:
             for j in range (range_y+1):
                 sub_array=self.base_array[first_slice_x:second_slice_x, first_slice_y:second_slice_y]
                 sub_x_min=self.geo_transform[1]*window_size*j+self.geo_transform[0] 
-                
-                print(str(first_slice_x)+':'+str(second_slice_x))
-                print(str(first_slice_y)+':'+str(second_slice_y))
                 
                 sub_geo_transform=[sub_x_min, self.geo_transform[1], self.geo_transform[2], y_min, self.geo_transform[4], self.geo_transform[5]]
                 driver = gdal.GetDriverByName( "GTiff" )
@@ -124,7 +119,7 @@ class WatershesBasedClassifier:
         if del_flag==True:
             shutil.rmtree(temp_folder)
             
-    def get_segmentation_with_zonal_statistics(self, output_path, statistical_indicators=['mean', 'min', 'stdev'], window_size=500, mode='vector'):
+    def get_segmentation_with_zonal_statistics(self, output_path, statistical_indicators=['mean'], window_size=500, mode='vector'):
         #availible statistical_indicators = ['mean', 'max', 'min', 'stdev']
         if self.temp_folder==None:
             os.mkdir(output_path.replace(output_path.split('/')[-1], '') +'/temp')
@@ -171,7 +166,6 @@ class WatershesBasedClassifier:
                 
                 for g in range (len(self.input_images_collection)):
                     name=self.input_images_collection[g].split('.')[0].split('/')[-1]
-                    print(name)
                     app = otbApplication.Registry.CreateApplication("ZonalStatistics")
                     app.SetParameterString("in", self.input_images_collection[g])
                     app.SetParameterString("inzone.vector.in", temp_folder+"temp.shp")
@@ -244,14 +238,9 @@ class WatershesBasedClassifier:
             
         os.remove(temp_folder+'temp.tif')
         
-        if mode=='vector':
-            outShapefile = output_path
-        else:
-            outShapefile = temp_folder+'temp_vector.shp'
         outDriver = ogr.GetDriverByName("ESRI Shapefile")
-        outDataSource = outDriver.CreateDataSource(outShapefile)
+        outDataSource = outDriver.CreateDataSource(output_path)
         outLayer = outDataSource.CreateLayer("layer", outReference, geom_type=ogr.wkbPolygon)
-        
         
         for image in self.input_images_collection:
             name=image.split('.')[0].split('/')[-1]
@@ -261,7 +250,7 @@ class WatershesBasedClassifier:
         outLayer=None
         outDataSource=None
         
-        new_obj=ogr.Open(outShapefile, 1)
+        new_obj=ogr.Open(output_path, 1)
         newLayer=new_obj.GetLayerByIndex(0)
         newLayerDef = newLayer.GetLayerDefn()
         
@@ -283,8 +272,8 @@ class WatershesBasedClassifier:
                     newFeature.SetGeometry(feature.GetGeometryRef())
                     newLayer.CreateFeature(newFeature)
                     featureID += 1
-                    newFeature=None                    
-                    
+                    newFeature=None                  
+                  
         newLayer=None
         new_obj=None 
         feature=None
@@ -293,13 +282,25 @@ class WatershesBasedClassifier:
         if del_flag==True:
             shutil.rmtree(temp_folder)
 
-files=['/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/NDVI',
+    def get_classified_segmentation (self, output_path, input_shapefile=None, class_number=5, fields=[], statistical_indicators=['mean'], window_size=500,):
+        if self.temp_folder==None:
+            os.mkdir(output_path.replace(output_path.split('/')[-1], '') +'/temp')
+            temp_folder=output_path.replace(output_path.split('/')[-1], '') +'/temp/'
+            del_flag=True
+        else:
+            temp_folder=self.temp_folder
+            del_flag=False
+            
+        if input_shapefile==None:
+            get_segmentation_with_zonal_statistics()
+
+'''files=['/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/NDVI',
        '/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/NDWI',
        '/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/r_B4.tif',
        '/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/r_B5.tif']
 a=WatershesBasedClassifier(files)
 a.get_segmentation_with_zonal_statistics('/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/result.shp')
-
+'''
 
 
 
