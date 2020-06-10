@@ -283,6 +283,12 @@ class WatershesBasedClassifier:
             shutil.rmtree(temp_folder, ignore_errors=True)
 
     def get_classified_segmentation (self, output_path=None, input_shapefile=None, fields=[], statistical_indicators=['mean'], window_size=500, class_number=5, mode='vector'):
+        
+        if output_path==None and input_shapefile==None:
+            raise Exception("Both output_path and input_shapefile are not presented")
+        if input_shapefile!=None and len(fields)==0:
+            raise Exception("Fields for classification are not presented")            
+            
         if mode=='vector':
             filename=output_path
         if mode=='raster':
@@ -341,27 +347,6 @@ class WatershesBasedClassifier:
             os.remove(output_path.replace(output_path.split('/')[-1], 'temp.shx'))
             os.remove(output_path.replace(output_path.split('/')[-1], 'temp.dbf'))
         
-        
-            
-            
-            
-'''files=['/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/NDVI',
-       '/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/NDWI',
-       '/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/r_B4.tif',
-       '/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/r_B5.tif']
-a=WatershesBasedClassifier(files)
-a.get_segmentation_with_zonal_statistics('/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/result.shp')
-a.get_classified_segmentation('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/result.shp', mode='vector')
-'''
-
-files=['/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/B5_.tif',
-       '/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/B4_.tif',
-       '/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/B3_.tif']
-a=WatershesBasedClassifier(files)
-a.get_classified_segmentation(input_shapefile='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/result.shp',
-                              fields=['B5__mean', 'B4__mean'], mode='vector')
-
-
 
 
 
