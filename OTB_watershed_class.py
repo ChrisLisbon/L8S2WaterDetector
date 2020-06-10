@@ -16,11 +16,10 @@ import shutil
 from primary_functions import k_means_clastering
 
 class WatershesBasedClassifier:
-    def __init__(self, input_images_collection, base_image_index=0, temp_folder=None, clasters_number=5):
+    def __init__(self, input_images_collection, base_image_index=0, temp_folder=None):
         self.input_images_collection=input_images_collection
         self.base_image_index=base_image_index
         self.temp_folder=temp_folder
-        self.clasters_number=clasters_number
         
         self.base_ds=gdal.Open(input_images_collection[base_image_index])
         self.geo_transform=self.base_ds.GetGeoTransform()
@@ -31,8 +30,8 @@ class WatershesBasedClassifier:
      
     def get_segmentation_with_base_image(self,  output_path, window_size=500):
         if self.temp_folder==None:
-            os.mkdir(output_path.replace(output_path.split('/')[-1], '') +'/temp')
-            temp_folder=output_path.replace(output_path.split('/')[-1], '') +'/temp/'
+            os.mkdir(output_path.replace(output_path.split('/')[-1], '') +'temp')
+            temp_folder=output_path.replace(output_path.split('/')[-1], '') +'temp/'
             del_flag=True
         else:
             temp_folder=self.temp_folder
@@ -119,11 +118,11 @@ class WatershesBasedClassifier:
         if del_flag==True:
             shutil.rmtree(temp_folder)
             
-    def get_segmentation_with_zonal_statistics(self, output_path, statistical_indicators=['mean'], window_size=500, mode='vector'):
+    def get_segmentation_with_zonal_statistics(self, output_path, statistical_indicators=['mean'], window_size=500):
         #availible statistical_indicators = ['mean', 'max', 'min', 'stdev']
         if self.temp_folder==None:
-            os.mkdir(output_path.replace(output_path.split('/')[-1], '') +'/temp')
-            temp_folder=output_path.replace(output_path.split('/')[-1], '') +'/temp/'
+            os.mkdir(output_path.replace(output_path.split('/')[-1], '') +'temp')
+            temp_folder=output_path.replace(output_path.split('/')[-1], '') +'temp/'
             del_flag=True
         else:
             temp_folder=self.temp_folder
@@ -280,29 +279,87 @@ class WatershesBasedClassifier:
         layer=None
         
         if del_flag==True:
-            shutil.rmtree(temp_folder)
+            print(temp_folder)
+            shutil.rmtree(temp_folder, ignore_errors=True)
 
-    def get_classified_segmentation (self, output_path, input_shapefile=None, class_number=5, fields=[], statistical_indicators=['mean'], window_size=500,):
-        if self.temp_folder==None:
-            os.mkdir(output_path.replace(output_path.split('/')[-1], '') +'/temp')
-            temp_folder=output_path.replace(output_path.split('/')[-1], '') +'/temp/'
-            del_flag=True
-        else:
-            temp_folder=self.temp_folder
-            del_flag=False
-            
+    def get_classified_segmentation (self, output_path=None, input_shapefile=None, fields=[], statistical_indicators=['mean'], window_size=500, class_number=5, mode='vector'):
+        if mode=='vector':
+            filename=output_path
+        if mode=='raster':
+            filename=output_path.replace(output_path.split('/')[-1], 'temp.shp')
         if input_shapefile==None:
-            get_segmentation_with_zonal_statistics()
-
+            self.get_segmentation_with_zonal_statistics(filename, statistical_indicators=statistical_indicators, window_size=window_size)
+            input_shapefile=filename
+            
+            vector_obj = ogr.Open(input_shapefile)
+            layer = vector_obj.GetLayerByIndex(0)
+            ldefn = layer.GetLayerDefn()
+            for n in range(ldefn.GetFieldCount()):
+                fdefn = ldefn.GetFieldDefn(n)
+                fields.append(fdefn.name)
+        if input_shapefile!=None:  
+            vector_obj = ogr.Open(input_shapefile)
+            layer = vector_obj.GetLayerByIndex(0)                              
+        arrays_list=[]
+        for field in fields:
+            arrays_list.append(list())
+            
+        for feature in layer:
+            i=0
+            for field in fields:
+                value=feature.GetField(field)
+                arrays_list[i].append(value)
+                i=i+1
+                
+        new_list=[]
+        for i in range (len(arrays_list)):
+            new_list.append(np.array(arrays_list[i]))
+            
+        clasters_array=k_means_clastering(new_list, clasters_number=class_number)
+        
+        vector_obj = ogr.Open(filename, 1)
+        layer = vector_obj.GetLayerByIndex(0)   
+        layer.CreateField(ogr.FieldDefn("class", ogr.OFTInteger))
+        i=0
+        for feature in layer:
+            value=int(clasters_array[i])
+            feature.SetField("class", value)
+            layer.SetFeature(feature)
+            i=i+1
+        
+        if mode=='raster':
+            driver = gdal.GetDriverByName('GTiff')
+            dst_ds = driver.Create(output_path, self.base_ds.RasterXSize, self.base_ds.RasterYSize, 1, gdal.GDT_UInt16)
+            dst_ds.SetGeoTransform(self.geo_transform)
+            dst_ds.SetProjection(self.prj)
+            OPTIONS = ['ATTRIBUTE=class']
+            gdal.RasterizeLayer(dst_ds, [1], layer, None, options=OPTIONS)
+            dst_ds, vector_obj, layer = None, None, None
+            
+            os.remove(output_path.replace(output_path.split('/')[-1], 'temp.shp'))
+            os.remove(output_path.replace(output_path.split('/')[-1], 'temp.prj'))
+            os.remove(output_path.replace(output_path.split('/')[-1], 'temp.shx'))
+            os.remove(output_path.replace(output_path.split('/')[-1], 'temp.dbf'))
+        
+        
+            
+            
+            
 '''files=['/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/NDVI',
        '/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/NDWI',
        '/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/r_B4.tif',
        '/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/r_B5.tif']
 a=WatershesBasedClassifier(files)
 a.get_segmentation_with_zonal_statistics('/home/julia/flooding_all/ob_to_class/LC08_L1TP_162016_20180714_20180730_01_T1/out_folder/result.shp')
+a.get_classified_segmentation('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/result.shp', mode='vector')
 '''
 
-
+files=['/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/B5_.tif',
+       '/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/B4_.tif',
+       '/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/B3_.tif']
+a=WatershesBasedClassifier(files)
+a.get_classified_segmentation(input_shapefile='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/LC08_L1TP_175029_20190407_20190422_01_T1/temp/result.shp',
+                              fields=['B5__mean', 'B4__mean'], mode='vector')
 
 
 
