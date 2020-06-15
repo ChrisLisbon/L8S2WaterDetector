@@ -13,6 +13,8 @@ from scipy.ndimage.measurements import variance
 from S1L1Tools import S1L1Tools
 import otbApplication
 from OTB_watershed_class import WatershesBasedClassifier
+from PIL import Image
+from PIL import ImageFilter
 
 def lee_filter(img, size):
     img_mean = uniform_filter(img, (size, size))
@@ -41,16 +43,20 @@ def save_array_as_gtiff(array, new_file_path, gtiff_path=None, dataset=None,  dt
     dataset.SetGeoTransform(ds.GetGeoTransform())    
     dataset.GetRasterBand(1).WriteArray(array)
 
-#ds=S1L1Tools('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/sentitel-1-test/S1A_IW_GRDH_1SDV_20190831T151921_20190831T151946_028815_0343B4_5B41.zip')
-#ds.perform_radiometric_calibration()
-#ds.export_to_l2('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/sentitel-1-test/', x_scale=0, y_scale=0)
+#ds=S1L1Tools('/home/julia/flooding_all/s1_filter_test/S1B_IW_GRDH_1SDV_20200608T151857_20200608T151922_021944_029A54_0E8F.zip')
+#ds.perform_radiometric_calibration(polarisations=['VV'])
+#ds.export_to_l2('/home/julia/flooding_all/s1_filter_test/', x_scale=0, y_scale=0, polarisations=['VV'])
 
 
-ds=gdal.Open('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/sentitel-1-test/S1A_IW_GRDH_1SDV_20190831T151921_20190831T151946_028815_0343B4_5B41_VH_sigmaNought.tif')
+#ds=gdal.Open('/home/julia/flooding_all/s1_filter_test/S1B_IW_GRDH_1SDV_20200608T151857_20200608T151922_021944_029A54_0E8F_VV.tif')
+#arr=ds.GetRasterBand(1).ReadAsArray()
+#new_arr=cv2.medianBlur(arr, 5)
+#save_array_as_gtiff(new_arr, '/home/julia/flooding_all/s1_filter_test/test.tif', dataset=ds)
+ds=gdal.Open('/home/julia/flooding_all/s1_filter_test/test.tif')
 arr=ds.GetRasterBand(1).ReadAsArray()
-print(np.array(arr).shape)
-new_arr=cv2.medianBlur(arr, 5)
-save_array_as_gtiff(new_arr, '/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/sentitel-1-test/VH_sigmaNought.tif', dataset=ds)
+image = Image.fromarray(arr)
+new_image = image.filter(ImageFilter.UnsharpMask(radius=2, percent=150))
+save_array_as_gtiff(new_image, '/home/julia/flooding_all/s1_filter_test/test2.tif', dataset=ds)
 
 '''
 app = otbApplication.Registry.CreateApplication("Despeckle")
