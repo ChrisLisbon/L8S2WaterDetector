@@ -6,6 +6,8 @@ Created on Thu Jun 11 13:48:43 2020
 @author: julia
 """
 import gdal
+import cv2
+import numpy as np
 from scipy.ndimage.filters import uniform_filter
 from scipy.ndimage.measurements import variance
 from S1L1Tools import S1L1Tools
@@ -39,13 +41,18 @@ def save_array_as_gtiff(array, new_file_path, gtiff_path=None, dataset=None,  dt
     dataset.SetGeoTransform(ds.GetGeoTransform())    
     dataset.GetRasterBand(1).WriteArray(array)
 
-#ds=S1L1Tools('/home/julia/flooding_all/s1_filter_test/S1B_EW_GRDM_1SDH_20200121T041559_20200121T041704_019910_025A94_146D.zip')
-#ds.export_to_l2('/home/julia/flooding_all/s1_filter_test/', x_scale=0, y_scale=0)
+#ds=S1L1Tools('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/sentitel-1-test/S1A_IW_GRDH_1SDV_20190831T151921_20190831T151946_028815_0343B4_5B41.zip')
+#ds.perform_radiometric_calibration()
+#ds.export_to_l2('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/sentitel-1-test/', x_scale=0, y_scale=0)
+
+
+ds=gdal.Open('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/sentitel-1-test/S1A_IW_GRDH_1SDV_20190831T151921_20190831T151946_028815_0343B4_5B41_VH_sigmaNought.tif')
+arr=ds.GetRasterBand(1).ReadAsArray()
+print(np.array(arr).shape)
+new_arr=cv2.medianBlur(arr, 5)
+save_array_as_gtiff(new_arr, '/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/sentitel-1-test/VH_sigmaNought.tif', dataset=ds)
+
 '''
-ds='/home/julia/flooding_all/s1_filter_test/hv.tif'
-#arr=ds.GetRasterBand(1).ReadAsArray()
-#new_arr=cv2.medianBlur(arr, 5)
-#save_array_as_gtiff(new_arr, '/home/julia/flooding_all/s1_filter_test/lee_hh.tif', dataset=ds)
 app = otbApplication.Registry.CreateApplication("Despeckle")
 
 app.SetParameterString("in", ds)
@@ -57,5 +64,5 @@ app.SetParameterString("out", "/home/julia/flooding_all/s1_filter_test/hv01_3.ti
 app.ExecuteAndWriteOutput()
 
 '''
-a=WatershesBasedClassifier(["/home/julia/flooding_all/s1_filter_test/hv01_3.tif"])
-a.get_segmentation_with_base_image(output_path="/home/julia/flooding_all/s1_filter_test/hv_segm_01_3.shp")
+#a=WatershesBasedClassifier(["/home/julia/flooding_all/s1_filter_test/hv01_3.tif"])
+#a.get_segmentation_with_base_image(output_path="/home/julia/flooding_all/s1_filter_test/hv_segm_01_3.shp")
