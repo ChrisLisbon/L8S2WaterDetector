@@ -14,6 +14,7 @@ from scipy import interpolate, ndimage
 import numpy as np
 import shapely.wkt
 import geojson
+import cv2
 
 class S1L1Tools():
     
@@ -96,9 +97,39 @@ class S1L1Tools():
                 calibrated_array = (measurement_array * measurement_array) / (full_lut * full_lut)
                 self.measurements.append({'polarisation':measurement['polarisation']+'_'+parameter,'measurement':self.__create_mem_raster_based_on_existing(measurement['measurement'],[calibrated_array],gdal.GDT_Float32)})
     
-    def perform_noise_correction_ESA(self):
-        pass
-    
+    def perform_median_filter_correction(self, polarisations=None):
+        print(self.measurements)
+        if not polarisations:
+            polarisations=[]
+            for measurement in self.measurements:
+                polarisations.append(measurement['polarisation'])
+        print(polarisations) 
+        for measurement in self.measurements:
+            if measurement['polarisation'] in polarisations:
+                measurement_array=np.array(measurement['measurement'].GetRasterBand(1).ReadAsArray())
+                if measurement_array.dtype=='float32':
+                    shape=measurement_array.shape
+                    dx=int(shape[1]/5)
+                    start_slice=0
+                    new_slice=dx
+                    for i in range (5):
+                        sub_array=measurement_array[... , start_slice:new_slice]
+                        start_slice=start_slice+dx
+                        new_slice=new_slice+dx
+                        filtered_sub_array=cv2.medianBlur(sub_array, 5)
+                        if i==0:
+                            filtered_array=filtered_sub_array
+                        else:
+                            print(filtered_sub_array)
+                            print(filtered_array)
+                            filtered_array=np.concatenate((filtered_array, filtered_sub_array),1)
+                        filtered_sub_array=None
+                        print('full sh')
+                        print(filtered_array.shape)                   
+                else:
+                    filtered_array=cv2.medianBlur(measurement_array, 5)
+                self.measurements.append({'polarisation':measurement['polarisation']+'_median_filter','measurement':self.__create_mem_raster_based_on_existing(measurement['measurement'],[filtered_array],gdal.GDT_Float32)})
+     
     def __get_metadata(self):
         namespaces = {'safe': '{http://www.esa.int/safe/sentinel-1.0}'}
         self.metadata_raw = ''
