@@ -109,6 +109,6 @@ class IndecesCalculator:
         array=None
         
 #a=IndecesCalculator('/media/julia/Data/flooding_Landsat/biribidjan_2019/LC08_L1TP_115026_20190910_20190917_01_T1')
-a=IndecesCalculator(('/media/julia/Data/landsat_for_validation/LC08_L1TP_175029_20181029_20181115_01_T1'))
+#a=IndecesCalculator(('/media/julia/Data/landsat_for_validation/LC08_L1TP_175029_20181029_20181115_01_T1'))
 #a.save_indeces('/media/julia/Data/flooding_Landsat/biribidjan_2019/test_out/')
-a.get_fmask_cloud_array()
+#a.get_fmask_cloud_array()
