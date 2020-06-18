@@ -38,12 +38,6 @@ class IndecesCalculator:
             if 'b7' in file.lower().split('.')[0].split('_'):
                 self.band_B7=gdal.Open(os.path.join(self.images_collection_dir, file))
                 print('band_B7: '+file)
-            if 'ang' in file.lower().split('.')[0].split('_'):
-                self.ANG_file=os.path.join(self.images_collection_dir, file)
-                print('ANG_file: '+file)
-            if 'mtl' in file.lower().split('.')[0].split('_'):
-                self.MTL_file=os.path.join(self.images_collection_dir, file)
-                print('MTL_file: '+file)
     
     def get_fmask_cloud_array(self):
         print('Running FMASK')
