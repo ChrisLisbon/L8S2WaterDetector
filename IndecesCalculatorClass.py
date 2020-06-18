@@ -10,34 +10,27 @@ import os
 import gdal
 import numpy as np
 from primary_functions import save_array_as_gtiff
-FMASK_EXECUTABLE_PATH = 'fmask_usgsLandsatStacked.py'
 
 class IndecesCalculator:
-    def __init__(self, images_collection_dir, srem_usgs_util_path=None):
+    def __init__(self, images_collection_dir):
         self.images_collection_dir=images_collection_dir        
         files_names=os.listdir(self.images_collection_dir)
         for file in files_names:
-            if 'b1' in file.lower().split('.')[0].split('_'):
-                self.band_B1=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B1: '+file)
-            if 'b2' in file.lower().split('.')[0].split('_'):
-                self.band_B2=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B2: '+file)
             if 'b3' in file.lower().split('.')[0].split('_'):
                 self.band_B3=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B3: '+file)
+                print('band_B3_GREEN: '+file)
             if 'b4' in file.lower().split('.')[0].split('_'):
                 self.band_B4=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B4: '+file)
+                print('band_B4_RED: '+file)
             if 'b5' in file.lower().split('.')[0].split('_'):
                 self.band_B5=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B5: '+file)
+                print('band_B5_NIR: '+file)
             if 'b6' in file.lower().split('.')[0].split('_'):
                 self.band_B6=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B6: '+file)
+                print('band_B6_MIR: '+file)
             if 'b7' in file.lower().split('.')[0].split('_'):
                 self.band_B7=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B7: '+file)
+                print('band_B7SWIR: '+file)
     
     def get_fmask_cloud_array(self):
         print('Running FMASK')
