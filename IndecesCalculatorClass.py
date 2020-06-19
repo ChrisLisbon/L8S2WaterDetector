@@ -31,15 +31,7 @@ class IndecesCalculator:
             if 'b7' in file.lower().split('.')[0].split('_'):
                 self.band_B7=gdal.Open(os.path.join(self.images_collection_dir, file))
                 print('band_B7SWIR: '+file)
-    
-    def get_fmask_cloud_array(self):
-        print('Running FMASK')
-        output_cloud_path = os.path.join(self.images_collection_dir, 'latest_cloud4.tif')
-        cmd = '%s -o %s --scenedir %s --cloudbufferdistance %s --cloudprobthreshold %s --shadowbufferdistance %s' % (
-        FMASK_EXECUTABLE_PATH, output_cloud_path, self.images_collection_dir, 30, 60.0, 30)
-        print('Command: %s' % cmd)
-        os.system(cmd)
-    
+        
     def get_NDVI_as_array(self):
         RED=self.band_B4.GetRasterBand(1).ReadAsArray()
         NIR=self.band_B5.GetRasterBand(1).ReadAsArray()

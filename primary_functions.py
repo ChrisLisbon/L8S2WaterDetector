@@ -67,7 +67,3 @@ def save_array_as_gtiff(array, new_file_path, gtiff_path=None, dataset=None,  dt
     dataset.SetGeoTransform(ds.GetGeoTransform())    
     dataset.GetRasterBand(1).WriteArray(array)
     
-a=gdal.Open('/media/julia/Data/flooding_Landsat/biribidjan_2019/LC08_L1TP_114026_20190802_20190819_01_T1/LC08_L1TP_114026_20190802_20190819_01_T1_B5.TIF')
-array=a.GetRasterBand(1).ReadAsArray()
-b=get_binary_classified_array(array)
-save_array_as_gtiff(b, '/media/julia/Data/flooding_Landsat/biribidjan_2019/test.tif', dataset=a, dtype='uint')
