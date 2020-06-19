@@ -14,14 +14,16 @@ import numpy as np
 from SREMPyLandsat.SREMPyLandsat import SREMPyLandsat
 from LandsatBasicUtils.BandCalibrator import LandsatBandCalibrator
 from primary_functions import save_array_as_gtiff
-FMASK_EXECUTABLE_PATH = 'fmask_usgsLandsatStacked.py'
+from osgeo.gdalconst import GA_Update
+FMASK_EXECUTABLE_PATH_LANDSAT = 'fmask_usgsLandsatStacked.py'
+FMASK_EXECUTABLE_PATH_SENTINEL='fmask_sentinel2Stacked.py'
 
 class DataPreparator:
     def __init__(self, input_folder, landsat=True, sentinel1=True, sentinel2=True, 
                  landsat_correction_method='srem',#dos
                  usgs_util_path= None,
                  landsat_cloud_fmask=False,
-                 sentinel2_cloud=None, # fmask, s2cloudless #if C1 - sen2cor - 
+                 sentinel2_cloud=None, # fmask, s2cloudless, native_2A_level(https://earth.esa.int/web/sentinel/technical-guides/sentinel-2-msi/level-2a/algorithm)  C1 - sen2cor - 
                  sentinel2_resolution=10, # 10 - with interpolation in B6 and B7, 20 - without interpolation
                  sen2cor_util_path=None
                 ):
@@ -124,7 +126,7 @@ class DataPreparator:
                 input_directory=os.path.join(self.input_folder, self.landsat_folder)
                 print('Running FMASK')
                 cmd = '%s -o %s --scenedir %s --cloudbufferdistance %s --cloudprobthreshold %s --shadowbufferdistance %s' % (
-                FMASK_EXECUTABLE_PATH, output_cloud_path, input_directory, 30, 60.0, 30)
+                FMASK_EXECUTABLE_PATH_LANDSAT, output_cloud_path, input_directory, 30, 60.0, 30)
                 print("cmd: "+ cmd)
                 os.system(cmd)
                 os.remove(output_cloud_path+'.aux.xml')
@@ -147,32 +149,86 @@ class DataPreparator:
             
     def save_sentinel2_prepared_images(self, output_folder):
         if self.sentinel2_folder!=None and self.sentinel2==True:
-            if self.sentinel2_level=='2A' and self.sentinel2_cloud==None:
+            
+            ###########################################################################################################
+            if self.sentinel2_level=='2A':
                 granule_into_main=os.path.join(self.input_folder, self.sentinel2_folder, 'GRANULE')
                 images_dir=os.path.join(os.listdir(granule_into_main)[0], 'IMG_DATA')
+                if self.sentinel2_cloud!='native_2A_level' and self.sentinel2_cloud!=None:
+                    raise Exception('For Sentinel 2 level-2A product only "native_2A_level" cloud mask is availible')
+                
                 if self.sentinel2_resolution==20:
                     m_images_folder=os.path.join(granule_into_main, images_dir, 'R20m')
                     for file in os.listdir(m_images_folder):
                         if 'B02' in file.split('_') or 'B03' in file.split('_') or 'B04' in file.split('_') or 'B8A' in file.split('_') or 'B11' in file.split('_') or 'B12' in file.split('_'):
-                            shutil.copyfile(os.path.join(m_images_folder, file), output_folder+'/'+file)
+                            new_file=file.replace('B02', 'B2')
+                            new_file=new_file.replace('B03', 'B3')
+                            new_file=new_file.replace('B04', 'B4')
+                            new_file=new_file.replace('B8A', 'B5')
+                            new_file=new_file.replace('B11', 'B6')
+                            new_file=new_file.replace('B12', 'B7')
+                            gdal.Warp(output_folder+'/'+new_file.split('.')[0]+'.tif', os.path.join(m_images_folder, file))
                 if self.sentinel2_resolution==10:
                     m_images_folder=os.path.join(granule_into_main, images_dir, 'R10m')
                     for file in os.listdir(m_images_folder):
                         if 'B02' in file.split('_') or 'B03' in file.split('_') or 'B04' in file.split('_') or 'B08' in file.split('_'):
-                            shutil.copyfile(os.path.join(m_images_folder, file), output_folder+'/'+file)
-                            
+                            new_file=file.replace('B02', 'B2')
+                            new_file=new_file.replace('B03', 'B3')
+                            new_file=new_file.replace('B04', 'B4')
+                            new_file=new_file.replace('B08', 'B5')
+                            gdal.Warp(output_folder+'/'+new_file.split('.')[0]+'.tif', os.path.join(m_images_folder, file))
                     mm_images_folder=os.path.join(granule_into_main, images_dir, 'R20m')
-                    print(os.listdir(mm_images_folder))
                     for file in os.listdir(mm_images_folder):
                         if 'B11' in file.split('_') or 'B12' in file.split('_'):
-                            src_ds=gdal.Open(os.path.join(mm_images_folder, file))
-                            print(src_ds.GetDriver())
-                            
+                            new_file=file.replace('B11', 'B6')
+                            new_file=new_file.replace('B12', 'B7')
+                            gdal.Warp(output_folder+'/'+new_file.split('.')[0]+'.tif', os.path.join(mm_images_folder, file), xRes = 10, yRes = -10, resampleAlg='bilinear')
+                          
+                if self.sentinel2_cloud!=None:
+                    print('Looking cloud mask')
+                    cloud_mask_folder=os.path.join(granule_into_main, images_dir, 'R20m')
+                    for file in os.listdir(cloud_mask_folder):
+                        if 'SCL' in file.split('_'):
+                            cloud_mask_file=os.path.join(cloud_mask_folder, file)
+                    if self.sentinel2_resolution==10:
+                        gdal.Warp(cloud_mask_file.replace('_20m.jp2', '_10m.tif'), cloud_mask_file, xRes = 10, yRes = -10)
+                        cloud_mask_file=cloud_mask_file.replace('_20m.jp2', '_10m.tif')
+                        
+                    mask_ds=gdal.Open(cloud_mask_file)
+                    mask_array=np.array(mask_ds.GetRasterBand(1).ReadAsArray())
+                    mask_ds=None
+                    for file in os.listdir(output_folder):
+                        ds=gdal.Open(os.path.join(output_folder, file))
+                        output_array=np.array(ds.GetRasterBand(1).ReadAsArray())
+                        output_array[mask_array==3]=32767
+                        output_array[mask_array==8]=32767
+                        output_array[mask_array==9]=32767
+                        output_array[mask_array==10]=32767
+                        output_array[mask_array==11]=32767
+                        save_array_as_gtiff(output_array, os.path.join(output_folder, file), dataset=ds, dtype='int')
+                        new_ds=gdal.Open(os.path.join(output_folder, file), GA_Update)
+                        new_ds.GetRasterBand(1).SetNoDataValue(32767)                        
+                    mask_array=None
+                    ds=None
+                    new_ds=None
+                    output_array=None
                     
-                    
+            #################################################################################################################
+            # STRONGLY NOT RECOMMENDED
+            if self.sentinel2_level=='1C':
+                if self.sentinel2_cloud=='fmask':
+                    output_cloud_path = os.path.join(output_folder, 'fmask_cloud_sentinel.tif')
+                    input_directory=os.path.join(self.input_folder, self.sentinel2_folder)
+                    print('Running FMASK')
+                    cmd = '%s -o %s --safedir %s --cloudbufferdistance %s --cloudprobthreshold %s --shadowbufferdistance %s' % (
+                    FMASK_EXECUTABLE_PATH_SENTINEL, output_cloud_path, input_directory, 30, 60.0, 30)
+                    print("cmd: "+ cmd)
+                    os.system(cmd)
+                    os.remove(output_cloud_path+'.aux.xml')
+                        
                     
 #a=DataPreparator('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/test_preparation/', landsat_correction_method='srem', 
                  #landsat_cloud_fmask=True, usgs_util_path='/home/julia/L8_ANGLES_2_7_0/l8_angles/l8_angles')
 #a.save_landsat_prepared_images('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/test_preparation/output_folder')
-a=DataPreparator('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/test_preparation/', sentinel2_resolution=10)
-a.save_sentinel2_prepared_images('/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/test_preparation/sentinel2_output')
+a=DataPreparator('//home/julia/flooding_all/flooding_preparation', sentinel2_resolution=20, sentinel2_cloud='native_2A_level')
+a.save_sentinel2_prepared_images('/home/julia/flooding_all/flooding_preparation/sentinel2_output')
