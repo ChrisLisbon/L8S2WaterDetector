@@ -47,7 +47,7 @@ class S1L1Tools():
                 if (archived_file.filename.lower().find(polarisation.lower()) !=-1) and (archived_file.filename.find('noise') !=-1) and (archived_file.filename.find('.xml') !=-1):
                     self.noise_correction_LUT.append({'polarisation':polarisation,'LUT': self.archive.read(archived_file)})
                     
-    def export_to_l2(self,output_directory,polarisations=None,projection='+proj=longlat +datum=WGS84 +no_defs', preview_mode=False, x_scale=5, y_scale=5):        
+    def export_to_l2(self,output_directory,polarisations=None,projection='+proj=longlat +datum=WGS84 +no_defs', preview_mode=False, x_scale=0, y_scale=0):        
         if not polarisations:
             polarisations=[]
             for measurement in self.measurements:
@@ -128,7 +128,7 @@ class S1L1Tools():
                         print(filtered_array.shape)                   
                 else:
                     filtered_array=cv2.medianBlur(measurement_array, 5)
-                self.measurements.append({'polarisation':measurement['polarisation']+'_median_filter','measurement':self.__create_mem_raster_based_on_existing(measurement['measurement'],[filtered_array],gdal.GDT_Float32)})
+                self.measurements.append({'polarisation':measurement['polarisation']+'_mf','measurement':self.__create_mem_raster_based_on_existing(measurement['measurement'],[filtered_array],gdal.GDT_Float32)})
      
     def __get_metadata(self):
         namespaces = {'safe': '{http://www.esa.int/safe/sentinel-1.0}'}

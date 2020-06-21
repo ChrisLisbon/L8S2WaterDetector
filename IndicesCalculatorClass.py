@@ -11,7 +11,7 @@ import gdal
 import numpy as np
 from primary_functions import save_array_as_gtiff
 
-class IndecesCalculator:
+class IndicesCalculator:
     def __init__(self, images_collection_dir):
         self.images_collection_dir=images_collection_dir        
         files_names=os.listdir(self.images_collection_dir)
@@ -38,14 +38,24 @@ class IndecesCalculator:
         a=NIR-RED
         b=RED+NIR
         NDVI_array=np.divide(a,b)
+        RED=None
+        NIR=None
+        a=None
+        b=None
         return NDVI_array
+        NDVI_array=None
     def get_NDWI_as_array(self):
         GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
         NIR=self.band_B5.GetRasterBand(1).ReadAsArray()
         a=GREEN-NIR
         b=GREEN+NIR
         NDWI_array=np.divide(a,b)
+        GREEN=None
+        NIR=None
+        a=None
+        b=None
         return NDWI_array  
+        NDWI_array=None
     def get_MNDWI_as_array(self):
         GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
         MIR=self.band_B6.GetRasterBand(1).ReadAsArray()
@@ -59,35 +69,47 @@ class IndecesCalculator:
         NIR=self.band_B5.GetRasterBand(1).ReadAsArray()
         MIR=self.band_B6.GetRasterBand(1).ReadAsArray()
         a=GREEN+RED
+        GREEN=None
+        RED=None        
         b=NIR+MIR
-        WRI_array=np.divide(a,b)
+        NIR=None
+        MIR=None
+        WRI_array=np.divide(a,b)      
+        a=None
+        b=None
         return WRI_array
+        WRI_array=None
     def get_AWEI_as_array(self):
         GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
         MIR=self.band_B6.GetRasterBand(1).ReadAsArray()
         NIR=self.band_B5.GetRasterBand(1).ReadAsArray()
         SWIR=self.band_B7.GetRasterBand(1).ReadAsArray()
         a=GREEN-MIR
+        GREEN=None
+        MIR=None
         b=NIR*0.25
+        NIR=None
         c=SWIR*2.75
+        SWIR=None
         d=b+c
         e=a*4
         AWEI_array=e-d
+        a=None
+        b=None
+        c=None
+        d=None
+        e=None
         return AWEI_array
-    def save_indeces(self, output_folder):
+    def save_indices(self, output_folder):
         array=self.get_NDVI_as_array()
-        save_array_as_gtiff(array, output_folder+'/NDVI.tif', dataset=self.band_B1)
+        save_array_as_gtiff(array, output_folder+'/NDVI.tif', dataset=self.band_B5)
         array=self.get_NDWI_as_array()
-        save_array_as_gtiff(array, output_folder+'/NDWI.tif', dataset=self.band_B1)
+        save_array_as_gtiff(array, output_folder+'/NDWI.tif', dataset=self.band_B5)
         array=self.get_MNDWI_as_array()
-        save_array_as_gtiff(array, output_folder+'/MNDWI.tif', dataset=self.band_B1)
+        save_array_as_gtiff(array, output_folder+'/MNDWI.tif', dataset=self.band_B5)
         array=self.get_WRI_as_array()
-        save_array_as_gtiff(array, output_folder+'/WRI.tif', dataset=self.band_B1)
+        save_array_as_gtiff(array, output_folder+'/WRI.tif', dataset=self.band_B5)
         array=self.get_AWEI_as_array()
-        save_array_as_gtiff(array, output_folder+'/AWEI.tif', dataset=self.band_B1)
+        save_array_as_gtiff(array, output_folder+'/AWEI.tif', dataset=self.band_B5)
         array=None
         
-#a=IndecesCalculator('/media/julia/Data/flooding_Landsat/biribidjan_2019/LC08_L1TP_115026_20190910_20190917_01_T1')
-#a=IndecesCalculator(('/media/julia/Data/landsat_for_validation/LC08_L1TP_175029_20181029_20181115_01_T1'))
-#a.save_indeces('/media/julia/Data/flooding_Landsat/biribidjan_2019/test_out/')
-#a.get_fmask_cloud_array()
