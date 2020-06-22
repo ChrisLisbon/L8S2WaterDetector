@@ -102,14 +102,14 @@ class IndicesCalculator:
         return AWEI_array
     def save_indices(self, output_folder):
         array=self.get_NDVI_as_array()
-        save_array_as_gtiff(array, output_folder+'/NDVI.tif', dataset=self.band_B5)
+        save_array_as_gtiff(array, output_folder+'/2NDVI.tif', dataset=self.band_B5)
         array=self.get_NDWI_as_array()
-        save_array_as_gtiff(array, output_folder+'/NDWI.tif', dataset=self.band_B5)
+        save_array_as_gtiff(array, output_folder+'/1NDWI.tif', dataset=self.band_B5)
         array=self.get_MNDWI_as_array()
-        save_array_as_gtiff(array, output_folder+'/MNDWI.tif', dataset=self.band_B5)
+        save_array_as_gtiff(array, output_folder+'/3MNDWI.tif', dataset=self.band_B5)
         array=self.get_WRI_as_array()
-        save_array_as_gtiff(array, output_folder+'/WRI.tif', dataset=self.band_B5)
+        save_array_as_gtiff(array, output_folder+'/4WRI.tif', dataset=self.band_B5)
         array=self.get_AWEI_as_array()
-        save_array_as_gtiff(array, output_folder+'/AWEI.tif', dataset=self.band_B5)
+        save_array_as_gtiff(array, output_folder+'/5AWEI.tif', dataset=self.band_B5)
         array=None
         

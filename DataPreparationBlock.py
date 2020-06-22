@@ -261,7 +261,7 @@ class DataPreparator:
             ds.perform_median_filter_correction(polarisations=['VH_sigmaNought', 'VV_sigmaNought'])
             ds.export_to_l2(output_folder, polarisations=['VH_sigmaNought_mf', 'VH_sigmaNought_mf'])
         
-    def prepare_datasets(self, output_folder, landsat=True, sentinel1=True, sentinel2=True):
+    def prepare_datasets(self, output_folder, landsat=False, sentinel1=False, sentinel2=False):
         if landsat==True and self.landsat_folder!=None:
             os.mkdir(os.path.join(self.input_folder, 'output_dataset', 'landsat'))
             self.save_landsat_prepared_images(os.path.join(output_folder, 'landsat'))
