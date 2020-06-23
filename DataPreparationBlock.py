@@ -263,13 +263,13 @@ class DataPreparator:
         
     def prepare_datasets(self, output_folder, landsat=False, sentinel1=False, sentinel2=False):
         if landsat==True and self.landsat_folder!=None:
-            os.mkdir(os.path.join(self.input_folder, 'output_dataset', 'landsat'))
+            os.mkdir(os.path.join(output_folder, 'landsat'))
             self.save_landsat_prepared_images(os.path.join(output_folder, 'landsat'))
         if sentinel2==True and (self.sentinel2_L1C_folder!=None or self.sentinel2_L2A_folder!=None):
-            os.mkdir(os.path.join(self.input_folder, 'output_dataset', 'sentinel2'))
+            os.mkdir(os.path.join(output_folder, 'sentinel2'))
             self.save_sentinel2_prepared_images(os.path.join(output_folder, 'sentinel2'))
         if sentinel1==True and self.sentinel1_folder!=None:
-            os.mkdir(os.path.join(self.input_folder, 'output_dataset', 'sentinel1'))
+            os.mkdir(os.path.join(output_folder, 'sentinel1'))
             self.save_sentinel1_prepared_images(os.path.join(output_folder, 'sentinel1'))
             
 #a=DataPreparator('/home/julia/flooding_all/flooding_preparation/test', landsat_cloud_fmask=True, 

@@ -34,12 +34,7 @@ def k_means_clastering(arrays_list, clasters_number=3):
     print('Clasterization finished')
     return(np.reshape(np.array(km.labels_), shape))
 
-def get_binary_classified_array(array):
-    upper_perc=np.nanpercentile(array, 98)
-    lower_perc=np.nanpercentile(array, 2)
-    array[array>upper_perc]=upper_perc
-    array[array<lower_perc]=lower_perc
-    
+def get_binary_classified_array(array):    
     mn = np.nanmin(array)
     mx = np.nanmax(array)
     new_array =  0 + 255*((array - mn) / (mx-mn))    
@@ -49,6 +44,13 @@ def get_binary_classified_array(array):
     ret, thresh = cv2.threshold(blur, 0 ,255, cv2.THRESH_OTSU)
     thresh[thresh==255]=1
     return thresh
+
+def percentile_to_range(array, upper_threshold=98,lower_threshold=2):
+    upper_perc=np.nanpercentile(array, upper_threshold)
+    lower_perc=np.nanpercentile(array, lower_threshold)
+    array[array>upper_perc]=upper_perc
+    array[array<lower_perc]=lower_perc
+    return array
 
 def save_array_as_gtiff(array, new_file_path, gtiff_path=None, dataset=None,  dtype='float'):    
     if dtype=='float':

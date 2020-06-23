@@ -9,8 +9,7 @@ Created on Wed Jun 17 11:42:40 2020
 import os
 import gdal
 import numpy as np
-from primary_functions import save_array_as_gtiff
-
+from primary_functions import save_array_as_gtiff, percentile_to_range
 class IndicesCalculator:
     def __init__(self, images_collection_dir):
         self.images_collection_dir=images_collection_dir        
@@ -42,7 +41,7 @@ class IndicesCalculator:
         NIR=None
         a=None
         b=None
-        return NDVI_array
+        return percentile_to_range(NDVI_array)
         NDVI_array=None
     def get_NDWI_as_array(self):
         GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
@@ -54,7 +53,7 @@ class IndicesCalculator:
         NIR=None
         a=None
         b=None
-        return NDWI_array  
+        return percentile_to_range(NDWI_array)
         NDWI_array=None
     def get_MNDWI_as_array(self):
         GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
@@ -62,7 +61,7 @@ class IndicesCalculator:
         a=GREEN-MIR
         b=GREEN+MIR
         MNDWI_array=np.divide(a,b)
-        return MNDWI_array
+        return percentile_to_range(MNDWI_array)
     def get_WRI_as_array(self):
         GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
         RED=self.band_B4.GetRasterBand(1).ReadAsArray()
@@ -77,7 +76,7 @@ class IndicesCalculator:
         WRI_array=np.divide(a,b)      
         a=None
         b=None
-        return WRI_array
+        return percentile_to_range(WRI_array)
         WRI_array=None
     def get_AWEI_as_array(self):
         GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
@@ -99,7 +98,7 @@ class IndicesCalculator:
         c=None
         d=None
         e=None
-        return AWEI_array
+        return percentile_to_range(AWEI_array)
     def save_indices(self, output_folder):
         array=self.get_NDVI_as_array()
         save_array_as_gtiff(array, output_folder+'/2NDVI.tif', dataset=self.band_B5)
