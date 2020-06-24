@@ -15,25 +15,25 @@ class IndicesCalculator:
         self.images_collection_dir=images_collection_dir        
         files_names=os.listdir(self.images_collection_dir)
         for file in files_names:
-            if 'b3' in file.lower().split('.')[0].split('_'):
-                self.band_B3=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B3_GREEN: '+file)
-            if 'b4' in file.lower().split('.')[0].split('_'):
-                self.band_B4=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B4_RED: '+file)
-            if 'b5' in file.lower().split('.')[0].split('_'):
-                self.band_B5=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B5_NIR: '+file)
-            if 'b6' in file.lower().split('.')[0].split('_'):
-                self.band_B6=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B6_MIR: '+file)
-            if 'b7' in file.lower().split('.')[0].split('_'):
-                self.band_B7=gdal.Open(os.path.join(self.images_collection_dir, file))
-                print('band_B7SWIR: '+file)
+            if 'grn' in file.lower().split('.')[0].split('_'):
+                self.green=gdal.Open(os.path.join(self.images_collection_dir, file))
+                print('GREEN: '+file)
+            if 'red' in file.lower().split('.')[0].split('_'):
+                self.red=gdal.Open(os.path.join(self.images_collection_dir, file))
+                print('RED: '+file)
+            if 'nir' in file.lower().split('.')[0].split('_'):
+                self.nir=gdal.Open(os.path.join(self.images_collection_dir, file))
+                print('NIR: '+file)
+            if 'mir' in file.lower().split('.')[0].split('_'):
+                self.mir=gdal.Open(os.path.join(self.images_collection_dir, file))
+                print('MIR: '+file)
+            if 'swir' in file.lower().split('.')[0].split('_'):
+                self.swir=gdal.Open(os.path.join(self.images_collection_dir, file))
+                print('SWIR: '+file)
         
     def get_NDVI_as_array(self):
-        RED=self.band_B4.GetRasterBand(1).ReadAsArray()
-        NIR=self.band_B5.GetRasterBand(1).ReadAsArray()
+        RED=self.red.GetRasterBand(1).ReadAsArray().astype('float')
+        NIR=self.nir.GetRasterBand(1).ReadAsArray().astype('float')
         a=NIR-RED
         b=RED+NIR
         NDVI_array=np.divide(a,b)
@@ -42,10 +42,9 @@ class IndicesCalculator:
         a=None
         b=None
         return percentile_to_range(NDVI_array)
-        NDVI_array=None
     def get_NDWI_as_array(self):
-        GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
-        NIR=self.band_B5.GetRasterBand(1).ReadAsArray()
+        GREEN=self.green.GetRasterBand(1).ReadAsArray().astype('float')
+        NIR=self.nir.GetRasterBand(1).ReadAsArray().astype('float')
         a=GREEN-NIR
         b=GREEN+NIR
         NDWI_array=np.divide(a,b)
@@ -54,19 +53,18 @@ class IndicesCalculator:
         a=None
         b=None
         return percentile_to_range(NDWI_array)
-        NDWI_array=None
     def get_MNDWI_as_array(self):
-        GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
-        MIR=self.band_B6.GetRasterBand(1).ReadAsArray()
+        GREEN=self.green.GetRasterBand(1).ReadAsArray().astype('float')
+        MIR=self.mir.GetRasterBand(1).ReadAsArray().astype('float')
         a=GREEN-MIR
         b=GREEN+MIR
         MNDWI_array=np.divide(a,b)
         return percentile_to_range(MNDWI_array)
     def get_WRI_as_array(self):
-        GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
-        RED=self.band_B4.GetRasterBand(1).ReadAsArray()
-        NIR=self.band_B5.GetRasterBand(1).ReadAsArray()
-        MIR=self.band_B6.GetRasterBand(1).ReadAsArray()
+        GREEN=self.green.GetRasterBand(1).ReadAsArray().astype('float')
+        RED=self.red.GetRasterBand(1).ReadAsArray().astype('float')
+        NIR=self.nir.GetRasterBand(1).ReadAsArray().astype('float')
+        MIR=self.mir.GetRasterBand(1).ReadAsArray().astype('float')
         a=GREEN+RED
         GREEN=None
         RED=None        
@@ -77,12 +75,11 @@ class IndicesCalculator:
         a=None
         b=None
         return percentile_to_range(WRI_array)
-        WRI_array=None
     def get_AWEI_as_array(self):
-        GREEN=self.band_B3.GetRasterBand(1).ReadAsArray()
-        MIR=self.band_B6.GetRasterBand(1).ReadAsArray()
-        NIR=self.band_B5.GetRasterBand(1).ReadAsArray()
-        SWIR=self.band_B7.GetRasterBand(1).ReadAsArray()
+        GREEN=self.green.GetRasterBand(1).ReadAsArray().astype('float')
+        MIR=self.mir.GetRasterBand(1).ReadAsArray().astype('float')
+        NIR=self.nir.GetRasterBand(1).ReadAsArray().astype('float')
+        SWIR=self.swir.GetRasterBand(1).ReadAsArray().astype('float')
         a=GREEN-MIR
         GREEN=None
         MIR=None
@@ -101,14 +98,14 @@ class IndicesCalculator:
         return percentile_to_range(AWEI_array)
     def save_indices(self, output_folder):
         array=self.get_NDVI_as_array()
-        save_array_as_gtiff(array, output_folder+'/NDVI.tif', dataset=self.band_B5)
+        save_array_as_gtiff(array, output_folder+'/NDVI.tif', dataset=self.nir)
         array=self.get_NDWI_as_array()
-        save_array_as_gtiff(array, output_folder+'/1NDWI.tif', dataset=self.band_B5)
-        array=self.get_MNDWI_as_array()
-        save_array_as_gtiff(array, output_folder+'/MNDWI.tif', dataset=self.band_B5)
+        save_array_as_gtiff(array, output_folder+'/NDWI.tif', dataset=self.nir)
+        #array=self.get_MNDWI_as_array()
+        #save_array_as_gtiff(array, output_folder+'/MNDWI.tif', dataset=self.nir)
         array=self.get_WRI_as_array()
-        save_array_as_gtiff(array, output_folder+'/WRI.tif', dataset=self.band_B5)
+        save_array_as_gtiff(array, output_folder+'/WRI.tif', dataset=self.nir)
         array=self.get_AWEI_as_array()
-        save_array_as_gtiff(array, output_folder+'/AWEI.tif', dataset=self.band_B5)
+        save_array_as_gtiff(array, output_folder+'/AWEI.tif', dataset=self.nir)
         array=None
         

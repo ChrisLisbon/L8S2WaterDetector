@@ -45,6 +45,27 @@ def get_binary_classified_array(array):
     thresh[thresh==255]=1
     return thresh
 
+def get_binary_array_from_clasters(clasters_array, classified_arrays_list):
+    clasters_values=np.unique(clasters_array)
+    for value in clasters_values:
+        unique1, counts1=np.unique(classified_arrays_list[0][clasters_array==value], return_counts=True)
+        values_dict1=dict(zip(unique1, counts1))
+        unique2, counts2=np.unique(classified_arrays_list[1][clasters_array==value], return_counts=True)
+        values_dict2=dict(zip(unique2, counts2))
+        if 1 not in values_dict1:
+            values_dict1[1]=0
+        if 0 not in values_dict1:
+            values_dict1[0]=0
+        if 1 not in values_dict2:
+            values_dict2[1]=0
+        if 0 not in values_dict2:
+            values_dict2[0]=0               
+        if values_dict1[1]/(values_dict1[1]+values_dict1[0])>=0.8 and values_dict2[1]/(values_dict2[1]+values_dict2[0])>=0.8:
+            clasters_array[clasters_array==value]=1
+        else:
+            clasters_array[clasters_array==value]=0
+    return clasters_array
+
 def percentile_to_range(array, upper_threshold=98,lower_threshold=2):
     upper_perc=np.nanpercentile(array, upper_threshold)
     lower_perc=np.nanpercentile(array, lower_threshold)
@@ -69,3 +90,8 @@ def save_array_as_gtiff(array, new_file_path, gtiff_path=None, dataset=None,  dt
     dataset.SetGeoTransform(ds.GetGeoTransform())    
     dataset.GetRasterBand(1).WriteArray(array)
     
+def reverse_binary_array(array):
+    array[array==0]=3
+    array[array==1]=0
+    array[array==3]=1
+    return array

@@ -93,7 +93,7 @@ class DataPreparator:
             os.mkdir(os.path.join(self.input_folder, 'temp'))
             
             if self.landsat_correction_method=='srem' and self.usgs_util_path==None:
-                raise Exception("For using SREM correction method indicate usgs_util_path!")
+                raise Exception("For using SREM correction indicate usgs_util_path!")
             if self.landsat_correction_method=='srem' and self.usgs_util_path!=None:                
                 srem = SREMPyLandsat(mode='landsat-usgs-utils')
                 for band in bands_list:
@@ -168,30 +168,33 @@ class DataPreparator:
                 print('Output spatial resolution - 20')
                 m_images_folder=os.path.join(granule_into_main, images_dir, 'R20m')
                 for file in os.listdir(m_images_folder):
-                    if 'B02' in file.split('_') or 'B03' in file.split('_') or 'B04' in file.split('_') or 'B8A' in file.split('_') or 'B11' in file.split('_') or 'B12' in file.split('_'):
-                        new_file=file.replace('B02', 'B2')
-                        new_file=new_file.replace('B03', 'B3')
-                        new_file=new_file.replace('B04', 'B4')
-                        new_file=new_file.replace('B8A', 'B5')
-                        new_file=new_file.replace('B11', 'B6')
-                        new_file=new_file.replace('B12', 'B7')
+                    if 'B03' in file.split('_') or 'B04' in file.split('_') or 'B8A' in file.split('_') or 'B11' in file.split('_') or 'B12' in file.split('_'):
+                        new_file=file.replace('B03', '__grn')
+                        new_file=new_file.replace('B04', '__red')
+                        new_file=new_file.replace('B8A', '__nir')
+                        new_file=new_file.replace('B11', '__mir')
+                        new_file=new_file.replace('B12', '__swir')
+                        new_file=new_file.split('___')[-1]
+                        new_file=new_file.replace('_20m', '')
                         gdal.Warp(output_folder+'/'+new_file.split('.')[0]+'.tif', os.path.join(m_images_folder, file))
             if self.sentinel2_resolution==10:
                 print('Output spatial resolution - 10')
                 m_images_folder=os.path.join(granule_into_main, images_dir, 'R10m')
                 for file in os.listdir(m_images_folder):
-                    if 'B02' in file.split('_') or 'B03' in file.split('_') or 'B04' in file.split('_') or 'B08' in file.split('_'):
-                        new_file=file.replace('B02', 'B2')
-                        new_file=new_file.replace('B03', 'B3')
-                        new_file=new_file.replace('B04', 'B4')
-                        new_file=new_file.replace('B08', 'B5')
+                    if 'B03' in file.split('_') or 'B04' in file.split('_') or 'B08' in file.split('_'):
+                        new_file=file.replace('B03', '__grn')
+                        new_file=new_file.replace('B04', '__red')
+                        new_file=new_file.replace('B08', '__nir')
+                        new_file=new_file.split('___')[-1]
+                        new_file=new_file.replace('_10m', '')
                         gdal.Warp(output_folder+'/'+new_file.split('.')[0]+'.tif', os.path.join(m_images_folder, file))
                 mm_images_folder=os.path.join(granule_into_main, images_dir, 'R20m')
                 for file in os.listdir(mm_images_folder):
                     if 'B11' in file.split('_') or 'B12' in file.split('_'):
-                        new_file=file.replace('B11', 'B6')
-                        new_file=new_file.replace('B12', 'B7')
-                        gdal.Warp(output_folder+'/'+new_file.replace('_20m.jp2', '_10m.tif'), os.path.join(mm_images_folder, file), xRes = 10, yRes = -10, resampleAlg='bilinear')
+                        new_file=file.replace('B11', '__mir')
+                        new_file=new_file.replace('B12', '__swir')
+                        new_file=new_file.split('___')[-1]
+                        gdal.Warp(output_folder+'/'+new_file.replace('_20m.jp2', '.tif'), os.path.join(mm_images_folder, file), xRes = 10, yRes = -10, resampleAlg='bilinear')
             
         if self.sentinel2_cloud!=None:
             

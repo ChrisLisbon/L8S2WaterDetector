@@ -12,7 +12,7 @@ import numpy as np
 from DataPreparationBlock import DataPreparator
 from IndicesCalculatorClass import IndicesCalculator
 from OTB_watershed_class import WatershesBasedClassifier
-from primary_functions import get_binary_classified_array, save_array_as_gtiff
+from primary_functions import get_binary_classified_array, save_array_as_gtiff, get_binary_array_from_clasters, reverse_binary_array
 
 class ClassificationProcessor:
     def __init__(self, input_directory, output_directory, 
@@ -38,7 +38,7 @@ class ClassificationProcessor:
         self.sentinel1=sentinel1
         self.sentinel2=sentinel2
         
-    def prepare_dataset(self, outputBounds=None): #outputBounds in EPSG:4326 (WGS84) (minX, minY, maxX, maxY)
+    def prepare_dataset(self, outputBounds=None, outputBoundsSRS=None): #outputBounds in EPSG:4326 (WGS84) (minX, minY, maxX, maxY)
         prep=DataPreparator(self.input_directory, 
                             landsat_correction_method=self.landsat_correction_method,
                              usgs_util_path=self.usgs_util_path,
@@ -53,7 +53,7 @@ class ClassificationProcessor:
             for folder in os.listdir(self.output_directory):
                 for file in os.listdir(os.path.join(self.output_directory, folder)):
                     full_file=os.path.join(self.output_directory, folder, file)
-                    gdal.Warp(full_file, full_file, format = 'GTiff', outputBounds=outputBounds, outputBoundsSRS = 'EPSG:4326')
+                    gdal.Warp(full_file, full_file, format = 'GTiff', outputBounds=outputBounds, outputBoundsSRS = outputBoundsSRS)
     
     def calculate_indices(self):
         for folder in os.listdir(self.output_directory):
@@ -67,47 +67,46 @@ class ClassificationProcessor:
                 os.mkdir(os.path.join(self.output_directory, 'sentinel2_indices'))
                 ind_cal.save_indices(os.path.join(self.output_directory, 'sentinel2_indices'))
     
-    def classify_dataset(self):
-        indices=os.listdir(os.path.join(self.output_directory, 'sentinel2_indices'))
+    def classify_dataset(self, bands_using=True, indices_using=True):
         images_collection=[]
-        for index in indices:
-            images_collection.append(os.path.join(self.output_directory, 'sentinel2_indices', index))
-        a=WatershesBasedClassifier(images_collection)
-        a.get_classified_segmentation(os.path.join(self.output_directory, 'sentinel2_class.tif'), mode='raster', window_size=500)
+        if indices_using==True:
+            indices=os.listdir(os.path.join(self.output_directory, 'sentinel2_indices'))
+            for index in indices:
+                images_collection.append(os.path.join(self.output_directory, 'sentinel2_indices', index))
+        if bands_using==True:
+            bands=os.listdir(os.path.join(self.output_directory, 'sentinel2'))
+            for band in bands:
+               images_collection.append(os.path.join(self.output_directory, 'sentinel2', band)) 
+        a=WatershesBasedClassifier(images_collection, base_image_index=2)
+        a.get_classified_segmentation(os.path.join(self.output_directory, 'sentinel2_class.tif'), mode='raster', window_size=500, statistical_indicators=['mean', 'stdev', 'max', 'min'])
         a=None
         for index in indices:
-            if index=='1NDWI.tif':
+            if index=='NDWI.tif':
                 ds=gdal.Open(os.path.join(self.output_directory, 'sentinel2_indices', index))
                 array=np.array(ds.GetRasterBand(1).ReadAsArray())
                 ds=None
                 ndwi_bin_array=get_binary_classified_array(array)
+                save_array_as_gtiff(ndwi_bin_array, os.path.join(self.output_directory, 'ndwi_bin_array.tif'), gtiff_path=os.path.join(self.output_directory, 'sentinel2_class.tif'))
                 array=None
             if 'NDVI' in index:
                 ds=gdal.Open(os.path.join(self.output_directory, 'sentinel2_indices', index))
                 array=np.array(ds.GetRasterBand(1).ReadAsArray())
                 ds=None
                 ndvi_bin_array=get_binary_classified_array(array)
+                save_array_as_gtiff(ndvi_bin_array, os.path.join(self.output_directory, 'ndvi_bin_array.tif'), gtiff_path=os.path.join(self.output_directory, 'sentinel2_class.tif'))
                 array=None 
         claster_ds=gdal.Open(os.path.join(self.output_directory, 'sentinel2_class.tif'))
         claster_array=np.array(claster_ds.GetRasterBand(1).ReadAsArray())
         claster_ds=None
-        for value in np.unique(claster_array):
-            ndwi_water_values=(ndwi_bin_array[claster_array==value]==1).sum()
-            ndwi_non_water_values=(ndwi_bin_array[claster_array==value]==0).sum()
-            ndvi_water_values=(ndvi_bin_array[claster_array==value]==0).sum()
-            ndvi_non_water_values=(ndvi_bin_array[claster_array==value]==1).sum()
-            if ndwi_water_values/(ndwi_water_values+ndwi_non_water_values)>=0.9 and ndvi_water_values/(ndvi_water_values+ndvi_non_water_values)>=0.9:
-                claster_array[claster_array==value]=1
-            else:
-                claster_array[claster_array==value]=0
+        new_claster_array=get_binary_array_from_clasters(claster_array, [ndwi_bin_array, reverse_binary_array(ndvi_bin_array)])
         ndwi_bin_array=None
         ndvi_bin_array=None
-        save_array_as_gtiff(claster_array, os.path.join(self.output_directory, 'sentinel2_water_mask.tif'), gtiff_path=os.path.join(self.output_directory, 'sentinel2_class.tif'))                
+        save_array_as_gtiff(new_claster_array, os.path.join(self.output_directory, 'sentinel2_water_mask.tif'), gtiff_path=os.path.join(self.output_directory, 'sentinel2_class.tif'))                
                         
-output_folder='/home/julia/flooding_all/flooding_preparation/test/output_dataset'
-input_folder='/home/julia/flooding_all/flooding_preparation/test'
+output_folder='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/test_preparation/out7'
+input_folder='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/test_preparation'
 
-#a=ClassificationProcessor(input_folder, output_folder, landsat_correction_method='dos', sentinel2_cloud='fmask', sentinel2=True)                
-#a.prepare_dataset(outputBounds=[29.7400, 59.8400, 30.4188, 60.0109])
-#a.calculate_indices()
-#a.classify_dataset()
+a=ClassificationProcessor(input_folder, output_folder, sentinel2_cloud=None, sentinel2=True)                
+a.prepare_dataset(outputBounds=[421405.0168, 4981906.8614, 429021.2526, 4986962.6195], outputBoundsSRS='EPSG:32637')
+a.calculate_indices()
+a.classify_dataset(bands_using=False)
