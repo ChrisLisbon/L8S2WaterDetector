@@ -342,10 +342,10 @@ class WatershesBasedClassifier:
             gdal.RasterizeLayer(dst_ds, [1], layer, None, options=OPTIONS)
             dst_ds, vector_obj, layer = None, None, None
             
-            os.remove(output_path.replace(output_path.split('/')[-1], 'temp.shp'))
-            os.remove(output_path.replace(output_path.split('/')[-1], 'temp.prj'))
-            os.remove(output_path.replace(output_path.split('/')[-1], 'temp.shx'))
-            os.remove(output_path.replace(output_path.split('/')[-1], 'temp.dbf'))
+            #os.remove(output_path.replace(output_path.split('/')[-1], 'temp.shp'))
+            #os.remove(output_path.replace(output_path.split('/')[-1], 'temp.prj'))
+            #os.remove(output_path.replace(output_path.split('/')[-1], 'temp.shx'))
+            #os.remove(output_path.replace(output_path.split('/')[-1], 'temp.dbf'))
         
 
 

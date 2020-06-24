@@ -73,17 +73,17 @@ class ClassificationProcessor:
         for index in indices:
             images_collection.append(os.path.join(self.output_directory, 'sentinel2_indices', index))
         a=WatershesBasedClassifier(images_collection)
-        a.get_classified_segmentation(os.path.join(self.output_directory, 'sentinel2_class.tif'), mode='raster')
+        a.get_classified_segmentation(os.path.join(self.output_directory, 'sentinel2_class.tif'), mode='raster', window_size=500)
         a=None
         for index in indices:
-            if 'NDWI' in index:
-                ds=gdal.Open(index)
+            if index=='1NDWI.tif':
+                ds=gdal.Open(os.path.join(self.output_directory, 'sentinel2_indices', index))
                 array=np.array(ds.GetRasterBand(1).ReadAsArray())
                 ds=None
                 ndwi_bin_array=get_binary_classified_array(array)
                 array=None
             if 'NDVI' in index:
-                ds=gdal.Open(index)
+                ds=gdal.Open(os.path.join(self.output_directory, 'sentinel2_indices', index))
                 array=np.array(ds.GetRasterBand(1).ReadAsArray())
                 ds=None
                 ndvi_bin_array=get_binary_classified_array(array)
@@ -102,12 +102,12 @@ class ClassificationProcessor:
                 claster_array[claster_array==value]=0
         ndwi_bin_array=None
         ndvi_bin_array=None
-        save_array_as_gtiff(claster_array, os.path.join(self.output_directory, 'sentinel2_water_mask.tif'))                
+        save_array_as_gtiff(claster_array, os.path.join(self.output_directory, 'sentinel2_water_mask.tif'), gtiff_path=os.path.join(self.output_directory, 'sentinel2_class.tif'))                
                         
 output_folder='/home/julia/flooding_all/flooding_preparation/test/output_dataset'
 input_folder='/home/julia/flooding_all/flooding_preparation/test'
 
-a=ClassificationProcessor(input_folder, output_folder, landsat_correction_method='dos', sentinel2_cloud='fmask', sentinel2=True)                
-#a.prepare_dataset()
+#a=ClassificationProcessor(input_folder, output_folder, landsat_correction_method='dos', sentinel2_cloud='fmask', sentinel2=True)                
+#a.prepare_dataset(outputBounds=[29.7400, 59.8400, 30.4188, 60.0109])
 #a.calculate_indices()
-a.classify_dataset()
+#a.classify_dataset()
