@@ -89,7 +89,7 @@ class DataPreparator:
                 if 'ANG' in file.split('.')[0].split('_'):   
                     ANG_file=os.path.join(self.input_folder, self.landsat_folder, file)
                     print('ANG_file: '+file)
-            bands_list=[band_B1, band_B2, band_B3, band_B4, band_B5, band_B6, band_B7]            
+            bands_list=[band_B3, band_B4, band_B5, band_B6, band_B7]            
             os.mkdir(os.path.join(self.input_folder, 'temp'))
             
             if self.landsat_correction_method=='srem' and self.usgs_util_path==None:
@@ -106,18 +106,38 @@ class DataPreparator:
                                 'cygwin_bash_exe_path':None}                    
                         srem.set_data(data)
                         sr = srem.get_srem_surface_reflectance_as_array()
-                        srem.save_array_as_gtiff(sr, os.path.join(output_folder, 'SREM_'+band.split('/')[-1]))
-                    else:
+                        if band==band_B3:
+                            filename=os.path.join(output_folder, 'grn.tif')
+                        if band==band_B4:
+                            filename=os.path.join(output_folder, 'red.tif')
+                        if band==band_B5:
+                            filename=os.path.join(output_folder, 'nir.tif')
+                        srem.save_array_as_gtiff(sr, filename)
+                    else:                        
+                        if band==band_B6:
+                            filename=os.path.join(output_folder, 'mir.tif')
+                        if band==band_B7:
+                            filename=os.path.join(output_folder, 'swir.tif')
                         pre_image=LandsatBandCalibrator(band, MTL_file)
                         corrected_array=pre_image.get_dos_corrected_reflectance_as_array()
-                        pre_image.save_array_as_gtiff(corrected_array, os.path.join(output_folder, 'DOS_'+band.split('/')[-1]))
+                        pre_image.save_array_as_gtiff(corrected_array, filename)
                                 
             if self.landsat_correction_method=='dos':
                 for band in bands_list:
                     print('Running DOS: '+band)
+                    if band==band_B3:
+                        filename=os.path.join(output_folder, 'grn.tif')
+                    if band==band_B4:
+                        filename=os.path.join(output_folder, 'red.tif')
+                    if band==band_B5:
+                        filename=os.path.join(output_folder, 'nir.tif')
+                    if band==band_B6:
+                        filename=os.path.join(output_folder, 'mir.tif')
+                    if band==band_B7:
+                        filename=os.path.join(output_folder, 'swir.tif')
                     pre_image=LandsatBandCalibrator(band, MTL_file)
                     corrected_array=pre_image.get_dos_corrected_reflectance_as_array()
-                    pre_image.save_array_as_gtiff(corrected_array, os.path.join(output_folder, 'DOS_'+band.split('/')[-1]))            
+                    pre_image.save_array_as_gtiff(corrected_array, filename)            
                     pre_image=None 
                                      
             if self.landsat_cloud_fmask==True:
@@ -135,7 +155,7 @@ class DataPreparator:
                 mask_ds=None
                 output_files_list=os.listdir(output_folder)
                 for file in output_files_list:
-                    if file!='fmask_cloud_landsat.tif':
+                    if file!='fmask_cloud_landsat.tif':                        
                         ds=gdal.Open(os.path.join(output_folder, file))
                         output_array=np.array(ds.GetRasterBand(1).ReadAsArray())
                         output_array[mask_array==2]=np.nan
@@ -145,6 +165,7 @@ class DataPreparator:
                 ds=None
                 output_array=None
             shutil.rmtree(os.path.join(self.input_folder, 'temp'))
+            
             
     def save_sentinel2_prepared_images(self, output_folder):
         if self.sentinel2_L2A_folder==None and self.sentinel2_L1C_folder!=None:
