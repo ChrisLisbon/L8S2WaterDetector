@@ -90,8 +90,11 @@ class DataPreparator:
                     ANG_file=os.path.join(self.input_folder, self.landsat_folder, file)
                     print('ANG_file: '+file)
             bands_list=[band_B3, band_B4, band_B5, band_B6, band_B7]            
-            os.mkdir(os.path.join(self.input_folder, 'temp'))
-            
+            try:
+                (os.mkdir(os.path.join(self.input_folder, 'temp')))
+            except Exception:
+                pass
+                
             if self.landsat_correction_method=='srem' and self.usgs_util_path==None:
                 raise Exception("For using SREM correction indicate usgs_util_path!")
             if self.landsat_correction_method=='srem' and self.usgs_util_path!=None:                
@@ -141,11 +144,11 @@ class DataPreparator:
                     pre_image=None 
                                      
             if self.landsat_cloud_fmask==True:
-                output_cloud_path = os.path.join(output_folder, 'fmask_cloud_landsat.tif')
+                output_cloud_path = os.path.join(output_folder, 'cloud_mask.tif')
                 input_directory=os.path.join(self.input_folder, self.landsat_folder)
                 print('Running FMASK')
                 cmd = '%s -o %s --scenedir %s --cloudbufferdistance %s --cloudprobthreshold %s --shadowbufferdistance %s' % (
-                FMASK_EXECUTABLE_PATH_LANDSAT, output_cloud_path, input_directory, 30, 60.0, 30)
+                FMASK_EXECUTABLE_PATH_LANDSAT, output_cloud_path, input_directory, 30, 75.0, 0)
                 print("cmd: "+ cmd)
                 os.system(cmd)
                 os.remove(output_cloud_path+'.aux.xml')
@@ -155,7 +158,7 @@ class DataPreparator:
                 mask_ds=None
                 output_files_list=os.listdir(output_folder)
                 for file in output_files_list:
-                    if file!='fmask_cloud_landsat.tif':                        
+                    if file!='cloud_mask.tif':                        
                         ds=gdal.Open(os.path.join(output_folder, file))
                         output_array=np.array(ds.GetRasterBand(1).ReadAsArray())
                         output_array[mask_array==2]=np.nan
@@ -164,6 +167,10 @@ class DataPreparator:
                 mask_array=None
                 ds=None
                 output_array=None
+                try:
+                    os.remove(output_cloud_path+'.aux.xml')
+                except Exception:
+                    pass
             shutil.rmtree(os.path.join(self.input_folder, 'temp'))
             
             
@@ -235,7 +242,7 @@ class DataPreparator:
                 cloud_mask_file = os.path.join(output_folder, 'cloud_mask.tif')
                 print('Running FMASK')
                 cmd = '%s -o %s --safedir %s --cloudbufferdistance %s --cloudprobthreshold %s --shadowbufferdistance %s' % (
-                FMASK_EXECUTABLE_PATH_SENTINEL, cloud_mask_file, os.path.join(self.input_folder, self.sentinel2_L1C_folder), 30, 60.0, 30)
+                FMASK_EXECUTABLE_PATH_SENTINEL, cloud_mask_file, os.path.join(self.input_folder, self.sentinel2_L1C_folder), 30, 75.0, 0)
                 print("cmd: "+ cmd)
                 os.system(cmd)
                 print('del .aux.xml')

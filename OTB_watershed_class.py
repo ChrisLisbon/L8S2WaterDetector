@@ -121,7 +121,10 @@ class WatershesBasedClassifier:
     def get_segmentation_with_zonal_statistics(self, output_path, statistical_indicators=['mean'], window_size=500):
         #availible statistical_indicators = ['mean', 'max', 'min', 'stdev']
         if self.temp_folder==None:
-            os.mkdir(output_path.replace(output_path.split('/')[-1], '') +'temp')
+            try:
+                os.mkdir(output_path.replace(output_path.split('/')[-1], '') +'temp')
+            except Exception:
+                pass
             temp_folder=output_path.replace(output_path.split('/')[-1], '') +'temp/'
             del_flag=True
         else:
@@ -292,7 +295,7 @@ class WatershesBasedClassifier:
         if mode=='vector':
             filename=output_path
         if mode=='raster':
-            filename=output_path.replace(output_path.split('/')[-1], 'temp.shp')
+            filename=output_path.replace('.tif', '.shp')
         if input_shapefile==None:
             self.get_segmentation_with_zonal_statistics(filename, statistical_indicators=statistical_indicators, window_size=window_size)
             input_shapefile=filename
