@@ -167,6 +167,7 @@ class WatershesBasedClassifier:
                 app.ExecuteAndWriteOutput()  
                 
                 for g in range (len(self.input_images_collection)):
+                    
                     name=self.input_images_collection[g].split('.')[0].split('/')[-1]
                     app = otbApplication.Registry.CreateApplication("ZonalStatistics")
                     app.SetParameterString("in", self.input_images_collection[g])

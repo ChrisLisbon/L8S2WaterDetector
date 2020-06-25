@@ -53,7 +53,7 @@ class ClassificationProcessor:
             for folder in os.listdir(self.output_directory):
                 for file in os.listdir(os.path.join(self.output_directory, folder)):
                     full_file=os.path.join(self.output_directory, folder, file)
-                    gdal.Warp(full_file, full_file, format = 'GTiff', outputBounds=outputBounds, outputBoundsSRS = outputBoundsSRS)
+                    gdal.Warp(full_file, full_file, format = 'GTiff', outputBounds=outputBounds, outputBoundsSRS = outputBoundsSRS, dstSRS=outputBoundsSRS)
     
     def calculate_indices(self, landsat=False, sentinel2=False):
         for folder in os.listdir(self.output_directory):
@@ -66,6 +66,11 @@ class ClassificationProcessor:
                 ind_cal=IndicesCalculator(os.path.join(self.output_directory, folder))
                 os.mkdir(os.path.join(self.output_directory, 'sentinel2_indices'))
                 ind_cal.save_indices(os.path.join(self.output_directory, 'sentinel2_indices'))
+        try:
+            os.remove(self.output_directory+'/landsat/cloud_mask.tif.aux.xml')
+        except Exception as e:
+            print(e)
+            pass
     
     def classify_dataset(self, landsat=False, sentinel2=False, bands_using=True, indices_using=True):
         if sentinel2==True:
@@ -80,7 +85,7 @@ class ClassificationProcessor:
                     if band!='cloud_mask.tif':
                         images_collection.append(os.path.join(self.output_directory, 'sentinel2', band)) 
             a=WatershesBasedClassifier(images_collection, base_image_index=2)
-            a.get_classified_segmentation(os.path.join(self.output_directory, 'sentinel2_class.tif'), mode='raster', window_size=500, statistical_indicators=['mean'])
+            a.get_classified_segmentation(os.path.join(self.output_directory, 'sentinel2_class.tif'), mode='raster', window_size=500, statistical_indicators=['mean', 'min', 'max'])
             a=None
             for index in indices:
                 if index=='NDWI.tif':
@@ -146,13 +151,12 @@ class ClassificationProcessor:
             #if 'water_mask' in file:
                 
             
-output_folder='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/test_preparation/output_folder'
-input_folder='/media/julia/Data/KrasnodarskiKray_Landsat_Sentinel-1/test_preparation/'
+output_folder='/home/julia/flooding_all/flooding_preparation/test2/output_folder'
+input_folder='/home/julia/flooding_all/flooding_preparation/test2'
 
-a=ClassificationProcessor(input_folder, output_folder, sentinel2=True, landsat=False, 
-                          usgs_util_path='/home/julia/L8_ANGLES_2_7_0/l8_angles/l8_angles',
+a=ClassificationProcessor(input_folder, output_folder, sentinel2=True, landsat=True, 
                           landsat_correction_method='dos',
-                          landsat_cloud_fmask=True, sentinel2_cloud='s2cloudless')                
-a.prepare_dataset(outputBounds=[445150.3052, 4900743.8090, 465113.7540, 4915747.1762], outputBoundsSRS='EPSG:32637')
+                          landsat_cloud_fmask=True, sentinel2_cloud='fmask')                
+#a.prepare_dataset(outputBounds=[377905.192819, 6682561.99468, 395859.634309, 6668372.19415], outputBoundsSRS='EPSG:32636')
 a.calculate_indices(sentinel2=True, landsat=True)
 a.classify_dataset(sentinel2=True, landsat=True)

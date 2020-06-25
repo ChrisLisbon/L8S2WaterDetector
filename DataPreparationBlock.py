@@ -167,12 +167,13 @@ class DataPreparator:
                 mask_array=None
                 ds=None
                 output_array=None
-                try:
-                    os.remove(output_cloud_path+'.aux.xml')
-                except Exception:
-                    pass
+                
             shutil.rmtree(os.path.join(self.input_folder, 'temp'))
-            
+            try:
+                os.remove(output_cloud_path+'.aux.xml')
+            except Exception as e:
+                print(e)
+                pass
             
     def save_sentinel2_prepared_images(self, output_folder):
         if self.sentinel2_L2A_folder==None and self.sentinel2_L1C_folder!=None:
@@ -245,14 +246,19 @@ class DataPreparator:
                 FMASK_EXECUTABLE_PATH_SENTINEL, cloud_mask_file, os.path.join(self.input_folder, self.sentinel2_L1C_folder), 30, 75.0, 0)
                 print("cmd: "+ cmd)
                 os.system(cmd)
-                print('del .aux.xml')
-                os.remove(cloud_mask_file+'.aux.xml')
+                try:
+                    os.remove(cloud_mask_file+'.aux.xml')
+                except Exception:
+                    pass
                 cloud_flags=[2, 3]
                 if self.sentinel2_resolution==10:
                     gdal.Warp(os.path.join(output_folder, 'cloud_mask.tif'), cloud_mask_file, xRes = 10, yRes = -10)
                     cloud_mask_file=os.path.join(output_folder, 'cloud_mask.tif')
                     print('del .aux.xml')
-                    os.remove(cloud_mask_file+'.aux.xml')
+                    try:
+                        os.remove(cloud_mask_file+'.aux.xml')
+                    except Exception:
+                        pass
                 
             if self.sentinel2_cloud=='s2cloudless':
                 print('Running s2cloudless')
