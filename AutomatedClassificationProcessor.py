@@ -106,9 +106,19 @@ class ClassificationProcessor:
             claster_array=np.array(claster_ds.GetRasterBand(1).ReadAsArray())
             claster_ds=None
             new_claster_array=get_binary_array_from_clasters(claster_array, [ndwi_bin_array, reverse_binary_array(ndvi_bin_array)])
+            
+            mask_path=os.path.join(self.output_directory, 'sentinel2', 'nir.tif')
+            mask_ds=gdal.Open(mask_path)
+            mask_array=mask_ds.getRasterBand(1).ReadAsArray()
+            mask_nodata=mask_ds.getRasterBand(1).GetNoDataValue()
+            mask_ds=None
+            new_claster_array[mask_array==mask_nodata]=5
+            mask_array=None
+            
             ndwi_bin_array=None
             ndvi_bin_array=None
-            save_array_as_gtiff(new_claster_array, os.path.join(self.output_directory, 'sentinel2_water_mask.tif'), gtiff_path=os.path.join(self.output_directory, 'sentinel2_class.tif'))                
+            save_array_as_gtiff(new_claster_array, os.path.join(self.output_directory, 'sentinel2_water_mask.tif'), gtiff_path=os.path.join(self.output_directory, 'sentinel2_class.tif'), dtype='uint', nodata_value=5)                
+        
         if landsat==True:
             images_collection=[]
             if indices_using==True:
@@ -142,21 +152,43 @@ class ClassificationProcessor:
             claster_array=np.array(claster_ds.GetRasterBand(1).ReadAsArray())
             claster_ds=None
             new_claster_array=get_binary_array_from_clasters(claster_array, [ndwi_bin_array, reverse_binary_array(ndvi_bin_array)])
+            
+            mask_path=os.path.join(self.output_directory, 'landsat', 'nir.tif')
+            mask_ds=gdal.Open(mask_path)
+            mask_array=mask_ds.getRasterBand(1).ReadAsArray()
+            mask_nodata=mask_ds.getRasterBand(1).GetNoDataValue()
+            mask_ds=None
+            new_claster_array[mask_array==mask_nodata]=5
+            mask_array=None
+                
             ndwi_bin_array=None
             ndvi_bin_array=None
-            save_array_as_gtiff(new_claster_array, os.path.join(self.output_directory, 'landsat_water_mask.tif'), gtiff_path=os.path.join(self.output_directory, 'landsat_class.tif'), dtype='uint')
+            save_array_as_gtiff(new_claster_array, os.path.join(self.output_directory, 'landsat_water_mask.tif'), gtiff_path=os.path.join(self.output_directory, 'landsat_class.tif'), dtype='uint', nodata_value=5)
 
-    #def create_consolidated_water_mask(self):
-        #for file in os.listdir(self.output_directory):
-            #if 'water_mask' in file:
+    def create_consolidated_water_mask(self):
+        sentinel2_mask_path=os.path.join(self.output_directory, 'sentinel2_water_mask.tif')
+        sentinel2_mask_ds=gdal.Open(sentinel2_mask_path)
+        sentinel2_mask_nodata_value=sentinel2_mask_ds.GetRasterBand(1).GetNoDataValue()
+        sentinel2_mask_array=sentinel2_mask_ds.GetRasterBand(1).ReadAsArray()
+        sentinel2_mask_ds=None
+        
+        landsat_mask_path=os.path.join(self.output_directory, 'landsat_water_mask.tif')
+        landsat_mask_ds=gdal.Warp('MEM', landsat_mask_path,  options=gdal.WarpOptions(format = 'MEM', xRes = 10, yRes = -10))
+        landsat_mask_nodata_value=landsat_mask_ds.GetRasterBand(1).GetNoDataValue()
+        landsat_mask_array=landsat_mask_ds.GetRasterBand(1).ReadAsArray()
+        landsat_mask_ds=None
+        
+        sentinel2_mask_array[sentinel2_mask_array==sentinel2_mask_nodata_value]=landsat_mask_array
                 
-            
-output_folder='/home/julia/flooding_all/flooding_preparation/test2/out2'
-input_folder='/home/julia/flooding_all/flooding_preparation/test2'
+        save_array_as_gtiff(sentinel2_mask_array, os.path.join(self.output_directory, 'sentinel2_landsat_water_mask.tif'), gtiff_path=os.path.join(self.output_directory, 'sentinel2_water_mask.tif'), dtype='uint', nodata_value=landsat_mask_nodata_value)
+
+
+output_folder='/media/julia/Data/water_detection_sbp/out'
+input_folder='/media/julia/Data/water_detection_sbp'
 
 a=ClassificationProcessor(input_folder, output_folder, sentinel2=True, landsat=True, 
                           landsat_correction_method='dos',
-                          landsat_cloud_fmask=True, sentinel2_cloud='fmask')                
-a.prepare_dataset(outputBounds=[359990.926578, 6681734.05119, 383163.176168, 6667702.99361], outputBoundsSRS='EPSG:32636')
-a.calculate_indices(sentinel2=True, landsat=True)
+                          landsat_cloud_fmask=True, sentinel2_cloud='s2cloudless')                
+#a.prepare_dataset(outputBounds=[609684.7559, 6639270.6362, 634680.5438, 6658914.9030], outputBoundsSRS='EPSG:32635')
+#a.calculate_indices(sentinel2=True, landsat=True)
 a.classify_dataset(sentinel2=True, landsat=True)

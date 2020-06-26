@@ -62,12 +62,6 @@ class DataPreparator:
         if self.landsat_folder!=None:
             landsat_files=os.listdir(os.path.join(self.input_folder, self.landsat_folder))
             for file in landsat_files:
-                if 'b1' in file.lower().split('.')[0].split('_'):
-                    band_B1=os.path.join(self.input_folder, self.landsat_folder, file)
-                    print('band_B1: '+file)
-                if 'b2' in file.lower().split('.')[0].split('_'):
-                    band_B2=os.path.join(self.input_folder, self.landsat_folder, file)
-                    print('band_B2: '+file)
                 if 'b3' in file.lower().split('.')[0].split('_'):
                     band_B3=os.path.join(self.input_folder, self.landsat_folder, file)
                     print('band_B3: '+file)

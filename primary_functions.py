@@ -73,7 +73,7 @@ def percentile_to_range(array, upper_threshold=98,lower_threshold=2):
     array[array<lower_perc]=lower_perc
     return array
 
-def save_array_as_gtiff(array, new_file_path, gtiff_path=None, dataset=None,  dtype='float'):    
+def save_array_as_gtiff(array, new_file_path, gtiff_path=None, dataset=None,  dtype='float', nodata_value=None):    
     if dtype=='float':
         dataType = gdal.GDT_Float32
     if dtype=='int':
@@ -89,6 +89,8 @@ def save_array_as_gtiff(array, new_file_path, gtiff_path=None, dataset=None,  dt
     dataset.SetProjection(ds.GetProjection())
     dataset.SetGeoTransform(ds.GetGeoTransform())    
     dataset.GetRasterBand(1).WriteArray(array)
+    if nodata_value!=None:
+        dataset.GetRasterBand(1).SetNoDataValue(nodata_value)
     
 def reverse_binary_array(array):
     array[array==0]=3
