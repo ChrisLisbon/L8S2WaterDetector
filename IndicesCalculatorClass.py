@@ -32,42 +32,42 @@ class IndicesCalculator:
                 print('SWIR: '+file)
         
     def get_NDVI_as_array(self):
-        nodataValue=self.red.GetRasterBand(1).GetNoDataValue()
+        nodataValue=self.nir.GetRasterBand(1).GetNoDataValue()
         RED=self.red.GetRasterBand(1).ReadAsArray().astype('float')
         NIR=self.nir.GetRasterBand(1).ReadAsArray().astype('float')
         a=NIR-RED
         b=RED+NIR
-        NDVI_array=percentile_to_range(np.divide(a,b))
-        NDVI_array[RED==nodataValue]=nodataValue
+        NDVI_array=np.divide(a,b)
+        NDVI_array[NIR==nodataValue]=np.nan
         RED=None
         NIR=None
         a=None
         b=None
-        return NDVI_array
+        return percentile_to_range(NDVI_array)
     def get_NDWI_as_array(self):
-        nodataValue=self.green.GetRasterBand(1).GetNoDataValue()
+        nodataValue=self.nir.GetRasterBand(1).GetNoDataValue()
         GREEN=self.green.GetRasterBand(1).ReadAsArray().astype('float')
         NIR=self.nir.GetRasterBand(1).ReadAsArray().astype('float')
         a=GREEN-NIR
         b=GREEN+NIR
-        NDWI_array=percentile_to_range(np.divide(a,b))
-        NDWI_array[GREEN==nodataValue]=nodataValue
+        NDWI_array=np.divide(a,b)
+        NDWI_array[NIR==nodataValue]=np.nan
         GREEN=None
         NIR=None
         a=None
         b=None
-        return NDWI_array
+        return percentile_to_range(NDWI_array)
     def get_MNDWI_as_array(self):
         nodataValue=self.green.GetRasterBand(1).GetNoDataValue()
         GREEN=self.green.GetRasterBand(1).ReadAsArray().astype('float')
         MIR=self.mir.GetRasterBand(1).ReadAsArray().astype('float')
         a=GREEN-MIR
         b=GREEN+MIR
-        MNDWI_array=percentile_to_range(np.divide(a,b))
-        MNDWI_array[GREEN==nodataValue]=nodataValue
-        return MNDWI_array
+        MNDWI_array=np.divide(a,b)
+        MNDWI_array[GREEN==nodataValue]=np.nan
+        return percentile_to_range(MNDWI_array)
     def get_WRI_as_array(self):
-        nodataValue=self.green.GetRasterBand(1).GetNoDataValue()
+        nodataValue=self.nir.GetRasterBand(1).GetNoDataValue()
         GREEN=self.green.GetRasterBand(1).ReadAsArray().astype('float')
         RED=self.red.GetRasterBand(1).ReadAsArray().astype('float')
         NIR=self.nir.GetRasterBand(1).ReadAsArray().astype('float')
@@ -78,13 +78,13 @@ class IndicesCalculator:
         b=NIR+MIR
         NIR=None
         MIR=None
-        WRI_array=percentile_to_range(np.divide(a,b))  
-        WRI_array[GREEN==nodataValue]=nodataValue
+        WRI_array=np.divide(a,b)    
+        WRI_array[NIR==nodataValue]=np.nan
         a=None
         b=None
-        return WRI_array
+        return percentile_to_range(WRI_array)
     def get_AWEI_as_array(self):
-        nodataValue=self.green.GetRasterBand(1).GetNoDataValue()
+        nodataValue=self.nir.GetRasterBand(1).GetNoDataValue()
         GREEN=self.green.GetRasterBand(1).ReadAsArray().astype('float')
         MIR=self.mir.GetRasterBand(1).ReadAsArray().astype('float')
         NIR=self.nir.GetRasterBand(1).ReadAsArray().astype('float')
@@ -98,21 +98,21 @@ class IndicesCalculator:
         SWIR=None
         d=b+c
         e=a*4
-        AWEI_array=percentile_to_range(e-d)
-        AWEI_array[GREEN==nodataValue]=nodataValue
+        AWEI_array=e-d
+        AWEI_array[NIR==nodataValue]=np.nan
         a=None
         b=None
         c=None
         d=None
         e=None
-        return AWEI_array
-    def save_indices(self, output_folder):        
+        return percentile_to_range(AWEI_array)
+    def save_indices(self, output_folder):
         array=self.get_NDVI_as_array()
         save_array_as_gtiff(array, output_folder+'/NDVI.tif', dataset=self.nir)
         array=self.get_NDWI_as_array()
-        save_array_as_gtiff(array, output_folder+'/NDWI.tif', dataset=self.green)
+        save_array_as_gtiff(array, output_folder+'/NDWI.tif', dataset=self.nir)
         #array=self.get_MNDWI_as_array()
-        #save_array_as_gtiff(array, output_folder+'/MNDWI.tif', dataset=self.green)
+        #save_array_as_gtiff(array, output_folder+'/MNDWI.tif', dataset=self.nir)
         array=self.get_WRI_as_array()
         save_array_as_gtiff(array, output_folder+'/WRI.tif', dataset=self.nir)
         array=self.get_AWEI_as_array()

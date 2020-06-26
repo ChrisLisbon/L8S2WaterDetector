@@ -151,12 +151,12 @@ class ClassificationProcessor:
             #if 'water_mask' in file:
                 
             
-output_folder='/home/julia/flooding_all/flooding_preparation/test2/output_folder'
+output_folder='/home/julia/flooding_all/flooding_preparation/test2/out2'
 input_folder='/home/julia/flooding_all/flooding_preparation/test2'
 
 a=ClassificationProcessor(input_folder, output_folder, sentinel2=True, landsat=True, 
                           landsat_correction_method='dos',
                           landsat_cloud_fmask=True, sentinel2_cloud='fmask')                
-#a.prepare_dataset(outputBounds=[377905.192819, 6682561.99468, 395859.634309, 6668372.19415], outputBoundsSRS='EPSG:32636')
+a.prepare_dataset(outputBounds=[359990.926578, 6681734.05119, 383163.176168, 6667702.99361], outputBoundsSRS='EPSG:32636')
 a.calculate_indices(sentinel2=True, landsat=True)
 a.classify_dataset(sentinel2=True, landsat=True)
