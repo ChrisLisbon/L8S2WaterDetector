@@ -9,9 +9,9 @@ Created on Sun Jun 21 14:38:29 2020
 import os
 import gdal
 import numpy as np
-from DataPreparationBlock import DataPreparator
+from DataPreparationClass import DataPreparator
 from IndicesCalculatorClass import IndicesCalculator
-from OTB_watershed_class import WatershesBasedClassifier
+from WatershesBasedClassifierClass import WatershesBasedClassifier
 from primary_functions import get_binary_classified_array, save_array_as_gtiff, get_binary_array_from_clasters, reverse_binary_array
 
 class ClassificationProcessor:
